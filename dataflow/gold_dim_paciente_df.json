@@ -6,11 +6,72 @@
 		},
 		"type": "MappingDataFlow",
 		"typeProperties": {
-			"sources": [],
-			"sinks": [],
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "silver_patients_sql",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "gold_dim_paciente",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
 			"transformations": [],
 			"scriptLines": [
-				""
+				"source(output(",
+				"          patient_id_bk as integer,",
+				"          nombre_completo as string,",
+				"          genero as string,",
+				"          fecha_nacimiento as date,",
+				"          rango_etario as string,",
+				"          correo_electronico as string,",
+				"          direccion as string,",
+				"          proveedor_seguro as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT\\n    patient_id AS patient_id_bk,\\n    COALESCE(NULLIF(TRIM(full_name), \\'\\'), \\'Desconocido\\') AS nombre_completo,\\n    CASE\\n        WHEN UPPER(TRIM(gender)) IN (\\'M\\', \\'MALE\\', \\'MASCULINO\\')\\n            THEN \\'Masculino\\'\\n        WHEN UPPER(TRIM(gender)) IN (\\'F\\', \\'FEMALE\\', \\'FEMENINO\\')\\n            THEN \\'Femenino\\'\\n        ELSE \\'Otro\\'\\n    END AS genero,\\n    date_of_birth AS fecha_nacimiento,\\n    CASE\\n        WHEN date_of_birth IS NULL THEN NULL\\n        WHEN DATEADD(YEAR, 19, date_of_birth) > CAST(GETDATE() AS DATE) THEN \\'0-18\\'\\n        WHEN DATEADD(YEAR, 36, date_of_birth) > CAST(GETDATE() AS DATE) THEN \\'19-35\\'\\n        WHEN DATEADD(YEAR, 61, date_of_birth) > CAST(GETDATE() AS DATE) THEN \\'36-60\\'\\n        ELSE \\'60+\\'\\n    END AS rango_etario,\\n    email AS correo_electronico,\\n    address AS direccion,\\n    COALESCE(NULLIF(TRIM(insurance_provider), \\'\\'), \\'Sin seguro\\') AS proveedor_seguro\\nFROM silver.patients',",
+				"     format: 'query') ~> source1",
+				"source1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          paciente_key as integer,",
+				"          patient_id_bk as integer,",
+				"          nombre_completo as string,",
+				"          genero as string,",
+				"          fecha_nacimiento as date,",
+				"          rango_etario as string,",
+				"          correo_electronico as string,",
+				"          direccion as string,",
+				"          proveedor_seguro as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          patient_id_bk,",
+				"          nombre_completo,",
+				"          genero,",
+				"          fecha_nacimiento,",
+				"          rango_etario,",
+				"          correo_electronico,",
+				"          direccion,",
+				"          proveedor_seguro",
+				"     )) ~> sink1"
 			]
 		}
 	}

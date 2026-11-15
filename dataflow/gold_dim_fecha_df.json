@@ -6,11 +6,86 @@
 		},
 		"type": "MappingDataFlow",
 		"typeProperties": {
-			"sources": [],
-			"sinks": [],
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "silver_admissions_sql",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "gold_dim_fecha",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
 			"transformations": [],
 			"scriptLines": [
-				""
+				"source(output(",
+				"          fecha_key as integer,",
+				"          fecha_completa as date,",
+				"          anio as short,",
+				"          trimestre as integer,",
+				"          trimestre_nombre as string,",
+				"          mes as integer,",
+				"          mes_nombre as string,",
+				"          mes_corto as string,",
+				"          semana_anio as integer,",
+				"          dia_mes as integer,",
+				"          dia_semana as integer,",
+				"          dia_nombre as string,",
+				"          es_fin_de_semana as boolean",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT\\n    CAST(CONVERT(VARCHAR(8), f.fecha_completa, 112) AS INT) AS fecha_key,\\n    f.fecha_completa,\\n    CAST(YEAR(f.fecha_completa) AS SMALLINT) AS anio,\\n    CAST(DATEPART(QUARTER, f.fecha_completa) AS TINYINT) AS trimestre,\\n    CONCAT(\\'T\\', DATEPART(QUARTER, f.fecha_completa)) AS trimestre_nombre,\\n    CAST(MONTH(f.fecha_completa) AS TINYINT) AS mes,\\n\\n    CASE MONTH(f.fecha_completa)\\n        WHEN 1 THEN \\'Enero\\'\\n        WHEN 2 THEN \\'Febrero\\'\\n        WHEN 3 THEN \\'Marzo\\'\\n        WHEN 4 THEN \\'Abril\\'\\n        WHEN 5 THEN \\'Mayo\\'\\n        WHEN 6 THEN \\'Junio\\'\\n        WHEN 7 THEN \\'Julio\\'\\n        WHEN 8 THEN \\'Agosto\\'\\n        WHEN 9 THEN \\'Septiembre\\'\\n        WHEN 10 THEN \\'Octubre\\'\\n        WHEN 11 THEN \\'Noviembre\\'\\n        WHEN 12 THEN \\'Diciembre\\'\\n    END AS mes_nombre,\\n\\n    CASE MONTH(f.fecha_completa)\\n        WHEN 1 THEN \\'Ene\\'\\n        WHEN 2 THEN \\'Feb\\'\\n        WHEN 3 THEN \\'Mar\\'\\n        WHEN 4 THEN \\'Abr\\'\\n        WHEN 5 THEN \\'May\\'\\n        WHEN 6 THEN \\'Jun\\'\\n        WHEN 7 THEN \\'Jul\\'\\n        WHEN 8 THEN \\'Ago\\'\\n        WHEN 9 THEN \\'Sep\\'\\n        WHEN 10 THEN \\'Oct\\'\\n        WHEN 11 THEN \\'Nov\\'\\n        WHEN 12 THEN \\'Dic\\'\\n    END AS mes_corto,\\n\\n    CAST(DATEPART(ISO_WEEK, f.fecha_completa) AS TINYINT) AS semana_anio,\\n    CAST(DAY(f.fecha_completa) AS TINYINT) AS dia_mes,\\n    CAST(d.dia_semana AS TINYINT) AS dia_semana,\\n\\n    CASE d.dia_semana\\n        WHEN 1 THEN \\'Lunes\\'\\n        WHEN 2 THEN \\'Martes\\'\\n        WHEN 3 THEN \\'Miercoles\\'\\n        WHEN 4 THEN \\'Jueves\\'\\n        WHEN 5 THEN \\'Viernes\\'\\n        WHEN 6 THEN \\'Sabado\\'\\n        WHEN 7 THEN \\'Domingo\\'\\n    END AS dia_nombre,\\n\\n    CAST(\\n        CASE\\n            WHEN d.dia_semana IN (6, 7) THEN 1\\n            ELSE 0\\n        END AS BIT\\n    ) AS es_fin_de_semana\\n\\nFROM (\\n    SELECT admission_date AS fecha_completa\\n    FROM silver.admissions\\n    WHERE admission_date IS NOT NULL\\n\\n    UNION\\n\\n    SELECT discharge_date\\n    FROM silver.admissions\\n    WHERE discharge_date IS NOT NULL\\n\\n    UNION\\n\\n    SELECT payment_date\\n    FROM silver.billing\\n    WHERE payment_date IS NOT NULL\\n) AS f\\n\\nCROSS APPLY (\\n    SELECT\\n        ((DATEDIFF(DAY, \\'19000101\\', f.fecha_completa) % 7 + 7) % 7) + 1\\n        AS dia_semana\\n) AS d',",
+				"     format: 'query') ~> source1",
+				"source1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          fecha_key as integer,",
+				"          fecha_completa as date,",
+				"          anio as integer,",
+				"          trimestre as integer,",
+				"          trimestre_nombre as string,",
+				"          mes as integer,",
+				"          mes_nombre as string,",
+				"          mes_corto as string,",
+				"          semana_anio as integer,",
+				"          dia_mes as integer,",
+				"          dia_semana as integer,",
+				"          dia_nombre as string,",
+				"          es_fin_de_semana as boolean",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          fecha_key,",
+				"          fecha_completa,",
+				"          anio,",
+				"          trimestre,",
+				"          trimestre_nombre,",
+				"          mes,",
+				"          mes_nombre,",
+				"          mes_corto,",
+				"          semana_anio,",
+				"          dia_mes,",
+				"          dia_semana,",
+				"          dia_nombre,",
+				"          es_fin_de_semana",
+				"     )) ~> sink1"
 			]
 		}
 	}
