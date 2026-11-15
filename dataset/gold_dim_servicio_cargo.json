@@ -10,6 +10,24 @@
 		},
 		"annotations": [],
 		"type": "AzureSqlTable",
-		"schema": []
+		"schema": [
+			{
+				"name": "servicio_cargo_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "tipo_cargo",
+				"type": "varchar"
+			},
+			{
+				"name": "estado_pago",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "gold",
+			"table": "dim_servicio_cargo"
+		}
 	}
 }
