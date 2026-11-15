@@ -188,7 +188,7 @@
 				"type": "ExecuteDataFlow",
 				"dependsOn": [
 					{
-						"activity": "Data flow5",
+						"activity": "Script2",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -243,6 +243,39 @@
 						"computeType": "General"
 					},
 					"traceLevel": "Fine"
+				}
+			},
+			{
+				"name": "Script2",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "Data flow5",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "NonQuery",
+							"text": "IF NOT EXISTS (\n    SELECT 1\n    FROM gold.dim_diagnostico\n    WHERE diagnostico_key = 1971\n)\nBEGIN\n    SET IDENTITY_INSERT gold.dim_diagnostico ON;\n\n    INSERT INTO gold.dim_diagnostico (\n        diagnostico_key,\n        codigo_icd,\n        descripcion_patologia,\n        nivel_severidad\n    )\n    VALUES (\n        1971,\n        'UNKNOWN',\n        'Sin diagnóstico registrado',\n        'Unknown'\n    );\n\n    SET IDENTITY_INSERT gold.dim_diagnostico OFF;\nEND;"
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
 				}
 			}
 		],
