@@ -204,7 +204,7 @@
 				"     ignoreSpaces: false,",
 				"     broadcast: 'auto')~> joinDiagnostico",
 				"admissions, joinDiagnostico join(admissions@admission_id == diagnoses@admission_id,",
-				"     joinType:'inner',",
+				"     joinType:'left',",
 				"     matchType:'exact',",
 				"     ignoreSpaces: false,",
 				"     broadcast: 'auto')~> join1",
